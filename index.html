@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Relatório de Inscrições - Batismo</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<style>
+  body {
+    background: linear-gradient(180deg, #eaf3fa, #f9fafc);
+    font-family: "Segoe UI", sans-serif;
+    min-height: 100vh;
+    padding: 30px 15px;
+  }
+
+  .container {
+    max-width: 900px;
+    margin: auto;
+  }
+
+  h2 {
+    color: #004d99;
+    font-weight: 700;
+    margin-bottom: 25px;
+    text-align: center;
+  }
+
+  .top-bar {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    gap: 10px;
+  }
+
+  .search-box input {
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    padding: 8px 12px;
+    outline: none;
+    transition: 0.3s;
+  }
+
+  .search-box input:focus {
+    border-color: #004d99;
+    box-shadow: 0 0 4px rgba(0,77,153,0.3);
+  }
+
+  .btn-refresh, .btn-print {
+    background-color: #004d99;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 16px;
+    transition: 0.3s;
+    margin-left: 5px;
+  }
+
+  .btn-refresh:hover, .btn-print:hover {
+    background-color: #003d80;
+  }
+
+  .filters-container {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 25px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+
+  .filters-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    align-items: end;
+  }
+
+  .filter-group {
+    flex: 1;
+    min-width: 150px;
+  }
+
+  .filter-group label {
+    font-size: 0.85rem;
+    color: #555;
+    margin-bottom: 5px;
+    display: block;
+    font-weight: 500;
+  }
+
+  .filter-group select {
+    width: 100%;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    padding: 8px 12px;
+    outline: none;
+    transition: 0.3s;
+  }
+
+  .filter-group select:focus {
+    border-color: #004d99;
+    box-shadow: 0 0 4px rgba(0,77,153,0.3);
+  }
+
+  .card-item {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    padding: 20px;
+    margin-bottom: 18px;
+    transition: 0.3s;
+    animation: fadeIn 0.6s ease;
+  }
+
+  .card-item:hover {
+    transform: scale(1.01);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+  }
+
+  .id-label {
+    font-size: 0.9rem;
+    color: #666;
+    font-weight: 500;
+    margin-bottom: 4px;
+    display: block;
+  }
+
+  .batizando-nome {
+    font-size: 1.5rem;
+    color: #004d99;
+    font-weight: 700;
+    margin-bottom: 10px;
+  }
+
+  .card-body {
+    font-size: 0.95rem;
+    color: #444;
+    line-height: 1.4;
+  }
+
+  .spinner-border {
+    display: block;
+    margin: 60px auto;
+  }
+
+  #footer {
+    text-align: right;
+    margin-top: 25px;
+    font-size: 14px;
+    color: #555;
+    font-style: italic;
+  }
+
+  .no-results {
+    text-align: center;
+    color: #666;
+    font-style: italic;
+    padding: 40px;
+  }
+
+  @keyframes fadeIn {
+    from {opacity: 0; transform: translateY(10px);}
+    to {opacity: 1; transform: translateY(0);}
+  }
+
+  /* Impressão */
+  @media print {
+    body {
+      background: white;
+      padding: 0;
+    }
+    .top-bar, .filters-container, #footer, .btn-refresh, .btn-print {
+      display: none !important;
+    }
+    #cardsContainer {
+      display: block !important;
+    }
+    .card-item {
+      box-shadow: none !important;
+      border: 1px solid #ccc;
+      width: 100%;
+      height: 45%; /* altura reduzida para caber dois cards */
+      margin-bottom: 5%;
+      page-break-inside: avoid;
+      overflow: hidden;
+    }
+    @page {
+      size: A4;
+      margin: 20mm;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h2>Igreja ADpaz</h2>
+<h4>Relatório dos inscritos para o batismo</h4>
+
+
+  <div class="top-bar">
+    <div class="search-box flex-grow-1">
+      <input type="text" id="searchInput" class="form-control" placeholder="🔍 Buscar por nome...">
+    </div>
+    <div>
+      <button class="btn-refresh" onclick="carregarRegistros()">🔄 Atualizar</button>
+      <button class="btn-print" onclick="window.print()">🖨️ Imprimir</button>
+    </div>
+  </div>
+
+  <!-- Filtros -->
+  <div class="filters-container">
+    <div class="filters-row">
+      <div class="filter-group">
+        <label for="filterCong">Congregação</label>
+        <select id="filterCong" onchange="filtrarRegistros()">
+          <option value="">Todas</option>
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <label for="filterEstad">Estado Civil</label>
+        <select id="filterEstad" onchange="filtrarRegistros()">
+          <option value="">Todos</option>
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <label for="filterVest">Vestuário</label>
+        <select id="filterVest" onchange="filtrarRegistros()">
+          <option value="">Todos</option>
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <label for="filterNece">Necessidade Especial</label>
+        <select id="filterNece" onchange="filtrarRegistros()">
+          <option value="">Todas</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <button class="btn btn-outline-secondary" onclick="limparFiltros()" style="padding: 8px 16px;">
+          🗑️ Limpar Filtros
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="spinner">
+    <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Carregando...</span></div>
+  </div>
+
+  <div id="cardsContainer" style="display:none;"></div>
+
+  <div id="footer"></div>
+</div>
+
+<script>
+const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzgo-ahsbyH9Yb8TrlQsfwlpc_1xFggd42F9s5ixRkN3IgiOFdtMlEAOlQEL7le-LmqSw/exec";
+
+// Mapa de substituição de labels
+const labelsMap = {
+  "Cong": "Congregação",
+  "Estad": "Estado Civil",
+  "Vest": "Vestuário",
+  "Nece": "Necessidade Especial",
+  "Carimbo de data/hora": "Data de Inscrição"
+};
+
+let todosRegistros = [];
+let opcoesFiltros = { cong: new Set(), estad: new Set(), vest: new Set(), nece: new Set() };
+
+function formatarDataHoraBR(dataStr) {
+  if (!dataStr) return "";
+  const data = new Date(dataStr);
+  if (isNaN(data)) return dataStr;
+  const dia = ("0" + data.getDate()).slice(-2);
+  const mes = ("0" + (data.getMonth() + 1)).slice(-2);
+  const ano = data.getFullYear();
+  const horas = ("0" + data.getHours()).slice(-2);
+  const minutos = ("0" + data.getMinutes()).slice(-2);
+  return `${dia}/${mes}/${ano} ${horas}:${minutos}h`;
+}
+
+function formatarDataBR(dataStr) {
+  if (!dataStr) return "";
+  const data = new Date(dataStr);
+  if (isNaN(data)) return dataStr;
+  const dia = ("0" + data.getDate()).slice(-2);
+  const mes = ("0" + (data.getMonth() + 1)).slice(-2);
+  const ano = data.getFullYear();
+  return `${dia}/${mes}/${ano}`;
+}
+
+function coletarOpcoesFiltros(registros) {
+  opcoesFiltros = { cong: new Set(), estad: new Set(), vest: new Set(), nece: new Set() };
+  registros.forEach(reg => {
+    if (reg["Cong"]) opcoesFiltros.cong.add(reg["Cong"]);
+    if (reg["Estad"]) opcoesFiltros.estad.add(reg["Estad"]);
+    if (reg["Vest"]) opcoesFiltros.vest.add(reg["Vest"]);
+    if (reg["Nece"]) opcoesFiltros.nece.add(reg["Nece"]);
+  });
+}
+
+function popularFiltros() {
+  popularDropdown('filterCong', opcoesFiltros.cong);
+  popularDropdown('filterEstad', opcoesFiltros.estad);
+  popularDropdown('filterVest', opcoesFiltros.vest);
+  popularDropdown('filterNece', opcoesFiltros.nece);
+}
+
+function popularDropdown(id, opcoes) {
+  const dropdown = document.getElementById(id);
+  const valorAtual = dropdown.value;
+  while (dropdown.options.length > 1) dropdown.remove(1);
+  Array.from(opcoes).sort().forEach(opcao => {
+    const option = document.createElement('option');
+    option.value = opcao;
+    option.textContent = opcao;
+    dropdown.appendChild(option);
+  });
+  if (Array.from(opcoes).includes(valorAtual)) dropdown.value = valorAtual;
+}
+
+function filtrarRegistros() {
+  const nome = document.getElementById('searchInput').value.toLowerCase();
+  const cong = document.getElementById('filterCong').value;
+  const estad = document.getElementById('filterEstad').value;
+  const vest = document.getElementById('filterVest').value;
+  const nece = document.getElementById('filterNece').value;
+
+  const filtrados = todosRegistros.filter(r => {
+    if (nome && !(r["Batizando"] || "").toLowerCase().includes(nome)) return false;
+    if (cong && r["Cong"] !== cong) return false;
+    if (estad && r["Estad"] !== estad) return false;
+    if (vest && r["Vest"] !== vest) return false;
+    if (nece && r["Nece"] !== nece) return false;
+    return true;
+  });
+
+  exibirRegistros(filtrados);
+}
+
+function exibirRegistros(registros) {
+  const container = document.getElementById("cardsContainer");
+  container.innerHTML = "";
+  if (!registros.length) {
+    container.innerHTML = '<div class="no-results">Nenhum registro encontrado.</div>';
+    container.style.display = "block";
+    return;
+  }
+
+  registros.forEach(reg => {
+    const card = document.createElement("div");
+    card.className = "card-item";
+    const id = reg["Id"] || "(sem ID)";
+    const nome = reg["Batizando"] || "(Sem Nome)";
+
+    let corpo = "";
+    for (const chave in reg) {
+      if (["Id", "Batizando"].includes(chave) || !reg[chave]) continue;
+      let label = labelsMap[chave] || chave;
+      let valor = reg[chave];
+      if (chave.toLowerCase().includes("nasc")) valor = formatarDataBR(valor);
+      else if (chave.toLowerCase().includes("data")) valor = formatarDataHoraBR(valor);
+      corpo += `<strong>${label}:</strong> ${valor}<br>`;
+    }
+
+    card.innerHTML = `<span class="id-label">ID: ${id}</span>
+                      <div class="batizando-nome">${nome}</div>
+                      <div class="card-body">${corpo}</div>`;
+    container.appendChild(card);
+  });
+
+  container.style.display = "block";
+}
+
+function limparFiltros() {
+  document.getElementById('searchInput').value = '';
+  ['filterCong','filterEstad','filterVest','filterNece'].forEach(id => document.getElementById(id).value = '');
+  filtrarRegistros();
+}
+
+async function carregarRegistros() {
+  const spinner = document.getElementById("spinner");
+  const footer = document.getElementById("footer");
+  spinner.style.display = "block";
+  document.getElementById("cardsContainer").style.display = "none";
+
+  try {
+    const resp = await fetch(WEBAPP_URL);
+    const dados = await resp.json();
+    if (!dados || !dados.length) {
+      spinner.innerHTML = "<p style='text-align:center;'>Nenhum registro encontrado.</p>";
+      return;
+    }
+
+    todosRegistros = dados;
+    coletarOpcoesFiltros(dados);
+    popularFiltros();
+    exibirRegistros(dados);
+
+    const agora = new Date();
+    const dia = ("0" + agora.getDate()).slice(-2);
+    const mes = ("0" + (agora.getMonth() + 1)).slice(-2);
+    const ano = agora.getFullYear();
+    const horas = ("0" + agora.getHours()).slice(-2);
+    const minutos = ("0" + agora.getMinutes()).slice(-2);
+    footer.innerHTML = `${dia}/${mes}/${ano} ${horas}:${minutos}h`;
+
+    spinner.style.display = "none";
+  } catch (e) {
+    spinner.innerHTML = `<p style='color:red;text-align:center;'>Erro ao carregar registros: ${e.message}</p>`;
+  }
+}
+
+document.getElementById("searchInput").addEventListener("keyup", filtrarRegistros);
+carregarRegistros();
+</script>
+
+</body>
+</html>
