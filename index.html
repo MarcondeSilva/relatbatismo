@@ -22,8 +22,14 @@
   h2 {
     color: #004d99;
     font-weight: 700;
-    margin-bottom: 25px;
+    margin-bottom: 10px;
     text-align: center;
+  }
+
+  h4 {
+    text-align: center;
+    color: #333;
+    margin-bottom: 25px;
   }
 
   .top-bar {
@@ -48,17 +54,19 @@
     box-shadow: 0 0 4px rgba(0,77,153,0.3);
   }
 
-  .btn-refresh, .btn-print {
+  .btn-refresh, .btn-print, .btn-clear {
     background-color: #004d99;
     color: white;
     border: none;
     border-radius: 8px;
-    padding: 8px 16px;
+    padding: 8px 12px;
     transition: 0.3s;
     margin-left: 5px;
+    min-width: 110px; /* Reduzido de 130px */
+    font-size: 0.9rem; /* Reduz ligeiramente o tamanho da fonte */
   }
 
-  .btn-refresh:hover, .btn-print:hover {
+  .btn-refresh:hover, .btn-print:hover, .btn-clear:hover {
     background-color: #003d80;
   }
 
@@ -147,7 +155,7 @@
 
   #footer {
     text-align: right;
-    margin-top: 25px;
+    margin-top: 15px;
     font-size: 14px;
     color: #555;
     font-style: italic;
@@ -160,9 +168,62 @@
     padding: 40px;
   }
 
+  #totalRegistros {
+    font-size: 0.95rem;
+    color: #004d99;
+    font-weight: 600;
+    text-align: right;
+    margin-bottom: 15px;
+  }
+
   @keyframes fadeIn {
     from {opacity: 0; transform: translateY(10px);}
     to {opacity: 1; transform: translateY(0);}
+  }
+
+  /* Ajustes para telas menores */
+  @media (max-width: 768px) {
+    .top-bar {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    
+    .search-box {
+      margin-bottom: 10px;
+    }
+    
+    .btn-refresh, .btn-print, .btn-clear {
+      min-width: 80px; /* Ainda menor em telas pequenas */
+      padding: 8px 10px;
+      font-size: 0.85rem;
+      margin: 2px;
+    }
+    
+    .btn-container {
+      display: flex;
+      justify-content: space-between;
+    }
+    
+    .filter-group {
+      min-width: 120px; /* Reduzido para telas menores */
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .btn-refresh, .btn-print, .btn-clear {
+      min-width: 70px; /* Mínimo para caber o texto */
+      font-size: 0.8rem;
+      padding: 6px 8px;
+    }
+    
+    .filters-row {
+      flex-direction: column;
+      gap: 10px;
+    }
+    
+    .filter-group {
+      min-width: 100%; /* Ocupa toda a largura em telas muito pequenas */
+    }
   }
 
   /* Impressão */
@@ -171,7 +232,7 @@
       background: white;
       padding: 0;
     }
-    .top-bar, .filters-container, #footer, .btn-refresh, .btn-print {
+    .top-bar, .filters-container, #footer, #totalRegistros {
       display: none !important;
     }
     #cardsContainer {
@@ -181,7 +242,7 @@
       box-shadow: none !important;
       border: 1px solid #ccc;
       width: 100%;
-      height: 45%; /* altura reduzida para caber dois cards */
+      height: 45%; /* cabem dois cards por folha */
       margin-bottom: 5%;
       page-break-inside: avoid;
       overflow: hidden;
@@ -197,20 +258,19 @@
 
 <div class="container">
   <h2>Igreja ADpaz</h2>
-<h4>Relatório dos inscritos para o batismo</h4>
-
+  <h4>Relatório dos inscritos para o batismo</h4>
 
   <div class="top-bar">
     <div class="search-box flex-grow-1">
       <input type="text" id="searchInput" class="form-control" placeholder="🔍 Buscar por nome...">
     </div>
-    <div>
-      <button class="btn-refresh" onclick="carregarRegistros()">🔄 Atualizar</button>
-      <button class="btn-print" onclick="window.print()">🖨️ Imprimir</button>
+    <div class="btn-container">
+      <button class="btn-refresh" onclick="carregarRegistros()">🔄 ATUALIZAR </button>
+      <button class="btn-clear" onclick="limparFiltros()">🗑️ LIMPAR FILTROS </button>
+      <button class="btn-print" onclick="window.print()">🖨️ IMPRIMIR </button>
     </div>
   </div>
 
-  <!-- Filtros -->
   <div class="filters-container">
     <div class="filters-row">
       <div class="filter-group">
@@ -219,35 +279,28 @@
           <option value="">Todas</option>
         </select>
       </div>
-      
       <div class="filter-group">
         <label for="filterEstad">Estado Civil</label>
         <select id="filterEstad" onchange="filtrarRegistros()">
           <option value="">Todos</option>
         </select>
       </div>
-      
       <div class="filter-group">
         <label for="filterVest">Vestuário</label>
         <select id="filterVest" onchange="filtrarRegistros()">
           <option value="">Todos</option>
         </select>
       </div>
-      
       <div class="filter-group">
         <label for="filterNece">Necessidade Especial</label>
         <select id="filterNece" onchange="filtrarRegistros()">
           <option value="">Todas</option>
         </select>
       </div>
-
-      <div class="filter-group">
-        <button class="btn btn-outline-secondary" onclick="limparFiltros()" style="padding: 8px 16px;">
-          🗑️ Limpar Filtros
-        </button>
-      </div>
     </div>
   </div>
+
+  <div id="totalRegistros"></div>
 
   <div id="spinner">
     <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Carregando...</span></div>
@@ -261,7 +314,6 @@
 <script>
 const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzgo-ahsbyH9Yb8TrlQsfwlpc_1xFggd42F9s5ixRkN3IgiOFdtMlEAOlQEL7le-LmqSw/exec";
 
-// Mapa de substituição de labels
 const labelsMap = {
   "Cong": "Congregação",
   "Estad": "Estado Civil",
@@ -346,10 +398,12 @@ function filtrarRegistros() {
 
 function exibirRegistros(registros) {
   const container = document.getElementById("cardsContainer");
+  const total = document.getElementById("totalRegistros");
   container.innerHTML = "";
   if (!registros.length) {
     container.innerHTML = '<div class="no-results">Nenhum registro encontrado.</div>';
     container.style.display = "block";
+    total.textContent = "Nenhum registro encontrado.";
     return;
   }
 
@@ -376,6 +430,7 @@ function exibirRegistros(registros) {
   });
 
   container.style.display = "block";
+  total.textContent = `Total de registros: ${registros.length}`;
 }
 
 function limparFiltros() {
